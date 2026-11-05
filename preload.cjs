@@ -1,0 +1,2 @@
+const {contextBridge,ipcRenderer}=require('electron');
+contextBridge.exposeInMainWorld('dictation',{onState:fn=>ipcRenderer.on('state',(_e,v)=>{fn(v);if(v.prepareId)ipcRenderer.send('prepared',v.prepareId);}),onLevel:fn=>ipcRenderer.on('level',(_e,v)=>fn(v)),onProgress:fn=>ipcRenderer.on('progress',(_e,v)=>fn(v)),drag:action=>{if(['start','stop'].includes(action))ipcRenderer.send('drag',action);}});
