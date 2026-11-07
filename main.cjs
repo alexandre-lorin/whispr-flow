@@ -5,6 +5,9 @@ const {root,socket}=require('./paths.cjs');
 const {hypr,active,deliver}=require('./delivery.cjs');
 const {SIZE,nearCursor}=require('./geometry.cjs');
 const {createDiagnostics}=require('./diagnostics.cjs');
+if (process.platform !== 'linux') {
+ require('./portable-main.cjs');
+} else {
 app.setName('Dictee Toubi');app.setPath('userData',path.join(root,'ui'));
 const primary=app.requestSingleInstanceLock();
 if(!primary){app.quit();}else{
@@ -175,4 +178,5 @@ if(!primary){app.quit();}else{
  app.on('before-quit',()=>{stopDrag();clearInterval(levelTimer);clearTimeout(dismiss);engine.disposeNow();server?.close();try{fs.unlinkSync(socket);}catch{}});
  for(const signal of ['SIGTERM','SIGINT'])process.on(signal,()=>app.quit());
  app.on('window-all-closed',()=>app.quit());
+}
 }

@@ -20,7 +20,13 @@ function runnerPresent(){
  }}catch{}return false;
 }
 async function ollamaResident(){try{const r=await request(11434,'/api/ps',{timeout:700});return r.code===200&&JSON.parse(r.data).models?.some(m=>m.size_vram>0)||false;}catch{return false;}}
-function createGPU({model=path.join(os.homedir(),'.local/share/falcon/models/ggml-large-v3-turbo.bin'),onState=()=>{},probeRunner=runnerPresent,probeResident=ollamaResident,monitor=true,launch=spawn,transport=request,reservePort}={}){
+function defaultModel(){
+ if(process.env.WHISPR_MODEL)return process.env.WHISPR_MODEL;
+ return process.platform==='linux'
+  ? path.join(os.homedir(),'.local/share/falcon/models/ggml-large-v3-turbo.bin')
+  : path.join(os.homedir(),'Whispr Flow','models','ggml-large-v3-turbo.bin');
+}
+function createGPU({model=defaultModel(),server=process.env.WHISPR_SERVER||(process.platform==='win32'?'whisper-server.exe':'whisper-server'),onState=()=>{},probeRunner=runnerPresent,probeResident=ollamaResident,monitor=true,launch=spawn,transport=request,reservePort}={}){
  let proc,closed,port,route,warming,generation=0,gpu=false,state='cold',priority=false,disposed=false,pumping=false,queue=[],current,monitorTimer,lastResident=0,resident=false,lastDemand=Date.now(),monitorBusy=false,memory={},recoveries=0;
  function report(value){if(state===value)return;state=value;onState({state,queued:queue.length+(current?1:0)});}
  function terminate(){generation++;gpu=false;warming=null;const p=proc;proc=null;
@@ -52,11 +58,11 @@ function createGPU({model=path.join(os.homedir(),'.local/share/falcon/models/ggm
    p.once('close',()=>{if(proc===p){proc=null;gpu=false;if(!priority&&!disposed)report('cold');}});
    let pending='';gpu=false;
    memory={};
-   p.stderr.on('data',b=>{if(proc!==p)return;pending=(pending+b.toString()).slice(-4096);const lines=pending.split(/[\r\n]/);pending=lines.pop();for(const line of lines){if(/using CUDA\d+ backend/.test(line))gpu=true;const size=line.match(/(kv self|kv cross|kv pad|compute buffer[^:=]*)\s*(?:size)?\s*=\s*([\d.]+)\s*MB/i);if(size)memory[size[1].trim()]=Number(size[2]);}});
+   p.stderr.on('data',b=>{if(proc!==p)return;pending=(pending+b.toString()).slice(-4096);const lines=pending.split(/[\r\n]/);pending=lines.pop();for(const line of lines){if(/using CUDA\d* backend|ggml_(?:metal|cuda|vulkan)|DirectML/i.test(line))gpu=true;const size=line.match(/(kv self|kv cross|kv pad|compute buffer[^:=]*)\s*(?:size)?\s*=\s*([\d.]+)\s*MB/i);if(size)memory[size[1].trim()]=Number(size[2]);}});
    for(let i=0;i<200;i++){
     if(epoch!==generation||priority||disposed)throw Error('Chargement suspendu.');
     if(p.exitCode!==null)throw Error('Le moteur Whisper ne démarre pas.');
-    try{const r=await transport(port,route+'/health',{timeout:500});if(r.code===200&&gpu){report('ready');return;}}catch{}
+    try{const r=await transport(port,route+'/health',{timeout:500});if(r.code===200&&(gpu||process.platform!=='linux')){report('ready');return;}}catch{}
     await sleep(100);
    }
    throw Error('Chargement GPU trop long.');

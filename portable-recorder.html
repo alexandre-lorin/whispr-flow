@@ -1,0 +1,52 @@
+<!doctype html>
+<meta charset="utf-8">
+<script>
+let stream, context, source, processor, pending = new Int16Array(0), active = false;
+
+function downsample(input, from, to = 16000) {
+  if (from === to) return input;
+  const ratio = from / to;
+  const output = new Int16Array(Math.floor(input.length / ratio));
+  for (let i = 0; i < output.length; i++) {
+    const start = Math.floor(i * ratio);
+    const end = Math.min(Math.floor((i + 1) * ratio), input.length);
+    let sum = 0;
+    for (let j = start; j < end; j++) sum += input[j];
+    const value = sum / Math.max(1, end - start);
+    output[i] = Math.max(-32768, Math.min(32767, Math.round(value * 32767)));
+  }
+  return output;
+}
+
+function sendSamples(samples) {
+  const merged = new Int16Array(pending.length + samples.length);
+  merged.set(pending); merged.set(samples, pending.length); pending = merged;
+  const size = 6400;
+  while (pending.length >= size) {
+    window.recorder.sendChunk(pending.slice(0, size).buffer);
+    pending = pending.slice(size);
+  }
+}
+
+async function start() {
+  if (active) return;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    context = new AudioContext();
+    source = context.createMediaStreamSource(stream);
+    processor = context.createScriptProcessor(4096, 1, 1);
+    processor.onaudioprocess = event => { if (active) sendSamples(downsample(event.inputBuffer.getChannelData(0), context.sampleRate)); };
+    source.connect(processor); processor.connect(context.destination); active = true;
+  } catch (error) { window.recorder.sendError(error?.message || 'Microphone indisponible.'); }
+}
+
+function stop() {
+  if (!active) return;
+  active = false; processor?.disconnect(); source?.disconnect(); stream?.getTracks().forEach(track => track.stop());
+  if (pending.length) { window.recorder.sendChunk(pending.buffer); pending = new Int16Array(0); }
+  context?.close(); context = source = processor = stream = null;
+}
+
+window.recorder.onCommand(command => command === 'start' ? start() : stop());
+window.recorder.ready();
+</script>

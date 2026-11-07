@@ -15,7 +15,7 @@ function capabilities(name = currentPlatform()) {
     nativeCapture: name === 'linux' ? 'PipeWire' : name === 'win32' ? 'WASAPI' : 'AVFoundation',
     nativeClipboard: name === 'linux' ? 'Wayland' : name === 'win32' ? 'Win32' : 'NSPasteboard',
     gpu: name === 'win32' ? 'CUDA / DirectML' : name === 'darwin' ? 'Metal' : 'CUDA',
-    status: name === 'linux' ? 'production' : 'planned',
+    status: name === 'linux' ? 'production' : 'implemented',
   };
 }
 

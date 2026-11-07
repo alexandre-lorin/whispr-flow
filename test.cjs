@@ -9,10 +9,18 @@ const {createGPU}=require('./gpu.cjs');
 const {PassThrough}=require('node:stream');
 const {EventEmitter}=require('node:events');
 const {capabilities}=require('./platform.cjs');
+const {createPortableDictation}=require('./portable-engine.cjs');
 test('les cibles déclarées exposent des capacités explicites',()=>{
  assert.equal(capabilities('linux').status,'production');
  assert.equal(capabilities('win32').nativeCapture,'WASAPI');
  assert.equal(capabilities('darwin').gpu,'Metal');
+});
+test('le moteur portable accepte le cycle de capture hors Linux',async()=>{
+ const submitted=[];
+ const gpu={start:async()=>{},submit:async pcm=>{submitted.push(pcm.length);return 'portable';},status:()=>({state:'ready'}),disposeNow(){}};
+ const engine=createPortableDictation({gpu});
+ await engine.start();engine.push(speech(.2));const text=await engine.finish();
+ assert.equal(text,'portable');assert.equal(submitted.length,1);engine.disposeNow();
 });
 const {createDiagnostics}=require('./diagnostics.cjs');
 test('les diagnostics ne conservent que codes fixes et dates, jamais le texte de l’erreur',()=>{
