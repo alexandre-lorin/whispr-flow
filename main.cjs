@@ -12,7 +12,7 @@ app.setName('Dictee Toubi');app.setPath('userData',path.join(root,'ui'));
 const primary=app.requestSingleInstanceLock();
 if(!primary){app.quit();}else{
  const engine=createDictation({onProgress:gpuChanged});
- let win,server,job,state='idle',dismiss,levelTimer,busy=false,drag,dragTimer,followTimer,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
+ let win,server,job,state='idle',dismiss,levelTimer,busy=false,drag,dragTimer,followTimer,followMonitors,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
  const pending=new Map();
  const diagnostics=createDiagnostics();
  function gpuChanged(){if(!job&&pending.size)renderPending();}
@@ -43,8 +43,8 @@ if(!primary){app.quit();}else{
    if(moving||!win?.isVisible()||!ownAddress)return;
    moving=true;
    try{
-    const [cursor,monitors]=await Promise.all([hypr(['-j','cursorpos']).then(JSON.parse),hypr(['-j','monitors']).then(JSON.parse)]);
-    const {x,y}=nearCursor(cursor,monitors);
+    const cursor=JSON.parse(await hypr(['-j','cursorpos']));
+    const {x,y}=nearCursor(cursor,followMonitors);
     await hypr(['dispatch','movewindowpixel',`exact ${x} ${y},address:${ownAddress}`]);
    }catch{}finally{moving=false;}
   },32);
@@ -91,6 +91,7 @@ if(!primary){app.quit();}else{
   focusBeforeShow=await active();
   const cursor=anchor||JSON.parse(await hypr(['-j','cursorpos']));
   const monitors=JSON.parse(await hypr(['-j','monitors']));
+  followMonitors=monitors;
   const bounds=nearCursor(cursor,monitors),{x,y}=bounds;
   await new Promise((resolve,reject)=>{
    const id=crypto.randomUUID(),timer=setTimeout(()=>{preparation=null;reject(Error('La capsule ne répond pas.'));},2000);
