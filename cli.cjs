@@ -3,7 +3,7 @@ const {spawn,execFileSync} = require('node:child_process');
 const path = require('node:path');
 const {socket,electron} = require('./paths.cjs');
 const action = process.argv[2] || 'toggle';
-if (!['toggle','cancel','status','quit','preview'].includes(action)) process.exit(1);
+if (!['toggle','cancel','status','quit','restart','preview'].includes(action)) process.exit(1);
 let cursor;
 if(['toggle','preview'].includes(action))try{cursor=JSON.parse(execFileSync('hyprctl',['-j','cursorpos'],{encoding:'utf8',timeout:1000}));}catch{}
 const message=['toggle','preview'].includes(action)?JSON.stringify({type:action,cursor}):action;
@@ -18,7 +18,7 @@ function request(payload=message) { return new Promise((resolve,reject)=>{
 (async()=>{
  let result;
  try{result=await request();}catch(error){
-  if(!['toggle','preview'].includes(action)) throw error;
+  if(!['toggle','preview','restart'].includes(action)) throw error;
   const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
   const p=spawn(electron,[path.join(__dirname,'main.cjs'),'--ozone-platform=wayland'],{detached:true,stdio:'ignore',env});
   p.on('error',()=>{});p.unref();

@@ -56,7 +56,7 @@ if(!primary){app.quit();}else{
     const x=Math.round(current.at[0]+p.x-current.cursor.x),y=Math.round(current.at[1]+p.y-current.cursor.y);
     await hypr(['dispatch','movewindowpixel',`exact ${x} ${y},address:${ownAddress}`]);
    }catch{stopDrag();}finally{current.moving=false;}
-  },32);
+  },16);
  }
  function update(phase,detail=''){
   state=phase;
@@ -155,6 +155,7 @@ if(!primary){app.quit();}else{
     if(cmd==='toggle')void toggle(cursor);
     else if(cmd==='cancel')void cancel();
     else if(cmd==='preview'&&!job&&!pending.size){void show(cursor).then(()=>update('preview')).catch(()=>{});}
+    else if(cmd==='restart'){s.end(JSON.stringify({state:'restarting'}));setTimeout(()=>{app.relaunch();app.exit(0);},40);return;}
     else if(cmd==='quit'){s.end(JSON.stringify({state:'stopped'}));app.quit();return;}
     else if(cmd!=='status'){s.end(JSON.stringify({error:'Commande invalide'}));return;}
     s.end(JSON.stringify({state,active:!!job||pending.size>0,recording:!!job,pending:pending.size,gpu:engine.gpuStatus(),placement,lastDelivery,diagnostics:diagnostics.list()}));

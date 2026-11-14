@@ -4,7 +4,7 @@ Dictée vocale locale GPU-first, avec capsule flottante, découpage pendant la p
 
 État du dépôt : **Linux / Hyprland en production locale**. Windows et macOS disposent maintenant d’un chemin Electron portable décrit dans [docs/PLATFORMS.md](docs/PLATFORMS.md), en attente d’un test sur les systèmes concernés.
 
-F9 démarre le micro, F9 arrête cette capture et finalise son texte, Maj+F9 annule la capture courante ou les finalisations en attente si le micro est arrêté. Le texte est collé sans Entrée. Une nouvelle capture est possible pendant la finalisation précédente. Les textes terminés sont livrés dans l'ordre des dictées.
+F9 démarre le micro, F9 arrête cette capture et finalise son texte, Maj+F9 annule la capture courante ou les finalisations en attente, et F10 relance l’application. Le texte est collé sans Entrée. Une nouvelle capture est possible pendant la finalisation précédente. Les textes terminés sont livrés dans l'ordre des dictées.
 
 La capsule fait 168 × 36 px. Elle apparaît près du curseur au démarrage, reste fixe ensuite et se déplace par glissement. Capture de pointeur côté rendu, déplacement explicite de sa seule fenêtre par Hyprland. `no_initial_focus` et `no_follow_mouse` empêchent le focus à l'apparition et au survol ; un clic de déplacement peut temporairement activer la capsule, puis le focus est rendu à la fenêtre d'origine. L'ancienne règle `no_focus` bloquait les interactions. La capsule est masquée immédiatement après copie/collage. Une erreur reste affichée.
 
