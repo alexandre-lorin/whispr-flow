@@ -32,7 +32,7 @@ Le découpage par énergie peut être moins précis avec bruit ou voix faible. L
 
 ## Installation et commandes
 
-Prérequis Linux : Hyprland, PipeWire (`pw-record`), `wl-copy`, `whisper-server`/ggml CUDA et le modèle `~/.local/share/falcon/models/ggml-large-v3-turbo.bin`. Windows/macOS utilisent `portable-main.cjs` avec Electron, un `whisper-server` local et le modèle `WHISPR_MODEL` (ou `~/Whispr Flow/models/ggml-large-v3-turbo.bin`). Le binaire peut être indiqué par `WHISPR_SERVER`. Les chemins portables sont implémentés mais non testés ici sur une machine Windows/macOS.
+Prérequis Linux : Hyprland, PipeWire (`pw-record`), `wl-copy`, `whisper-server`/ggml CUDA et le modèle `~/.local/share/falcon/models/ggml-large-v3-turbo.bin`. Pour le suivi curseur natif, compiler une fois `cargo build --release --manifest-path native-follow/Cargo.toml`. Windows/macOS utilisent `portable-main.cjs` avec Electron, un `whisper-server` local et le modèle `WHISPR_MODEL` (ou `~/Whispr Flow/models/ggml-large-v3-turbo.bin`). Le binaire peut être indiqué par `WHISPR_SERVER`. Les chemins portables sont implémentés mais non testés ici sur une machine Windows/macOS.
 
 Sur Windows ou macOS : installer Node.js 20+, cloner le dépôt, lancer `npm install`, placer le modèle GGML à l’emplacement indiqué puis lancer `npm start`. Au premier lancement, autoriser le microphone ; sur macOS, autoriser aussi l’Accessibilité pour le collage dans l’application active. F9 démarre/arrête et Maj+F9 annule.
 

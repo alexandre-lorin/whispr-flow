@@ -1,5 +1,5 @@
 const {app,BrowserWindow,ipcMain} = require('electron');
-const fs=require('node:fs'),path=require('node:path'),net=require('node:net'),crypto=require('node:crypto');
+const fs=require('node:fs'),path=require('node:path'),net=require('node:net'),crypto=require('node:crypto'),{spawn}=require('node:child_process');
 const {root,socket}=require('./paths.cjs');
  const {createDictation}=require('./engine.cjs');
 const {hypr,active,deliver}=require('./delivery.cjs');
@@ -12,7 +12,7 @@ app.setName('Dictee Toubi');app.setPath('userData',path.join(root,'ui'));
 const primary=app.requestSingleInstanceLock();
 if(!primary){app.quit();}else{
  const engine=createDictation({onProgress:gpuChanged});
- let win,server,job,state='idle',dismiss,levelTimer,busy=false,drag,dragTimer,followTimer,followMonitors,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
+ let win,server,job,state='idle',dismiss,levelTimer,busy=false,drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
  const pending=new Map();
  const diagnostics=createDiagnostics();
  function gpuChanged(){if(!job&&pending.size)renderPending();}
@@ -36,9 +36,9 @@ if(!primary){app.quit();}else{
   });
   renderPending();
  }
- function stopFollow(){clearInterval(followTimer);followTimer=null;}
- function startFollow(){
-  stopFollow();let moving=false;
+ function stopFollow(){clearInterval(followTimer);followTimer=null;if(nativeFollow){nativeFollow.kill();nativeFollow=null;}}
+ function startJsFollow(){
+  let moving=false;
   followTimer=setInterval(async()=>{
    if(moving||!win?.isVisible()||!ownAddress)return;
    moving=true;
@@ -49,6 +49,15 @@ if(!primary){app.quit();}else{
     await hypr(['dispatch','movewindowpixel',`exact ${x} ${y},address:${ownAddress}`]);
    }catch{}finally{moving=false;}
   },8);
+ }
+ function startFollow(){
+  stopFollow();
+  const binary=path.join(__dirname,'native-follow','target','release','whispr-flow-follow');
+  if(process.platform==='linux'&&fs.existsSync(binary)){
+   nativeFollow=spawn(binary,['--address',ownAddress],{stdio:'ignore'});
+   nativeFollow.once('error',()=>{nativeFollow=null;startJsFollow();});
+   nativeFollow.once('exit',()=>{nativeFollow=null;});
+  }else startJsFollow();
  }
  function stopDrag(){dragSequence++;drag=null;clearInterval(dragTimer);dragTimer=null;stopFollow();
   if(ownAddress&&focusBeforeShow?.address)void active().then(w=>{if(w.address===ownAddress)return hypr(['dispatch','focuswindow',`address:${focusBeforeShow.address}`]);}).catch(()=>{});
