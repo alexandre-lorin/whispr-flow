@@ -45,9 +45,10 @@ if(!primary){app.quit();}else{
    try{
     const cursor=JSON.parse(await hypr(['-j','cursorpos']));
     const {x,y}=nearCursor(cursor,followMonitors);
+    try{win.setPosition(x,y);}catch{}
     await hypr(['dispatch','movewindowpixel',`exact ${x} ${y},address:${ownAddress}`]);
    }catch{}finally{moving=false;}
-  },32);
+  },8);
  }
  function stopDrag(){dragSequence++;drag=null;clearInterval(dragTimer);dragTimer=null;stopFollow();
   if(ownAddress&&focusBeforeShow?.address)void active().then(w=>{if(w.address===ownAddress)return hypr(['dispatch','focuswindow',`address:${focusBeforeShow.address}`]);}).catch(()=>{});

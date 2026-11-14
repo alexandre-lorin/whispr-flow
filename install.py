@@ -13,10 +13,10 @@ text = text.replace('bind = , F9, exec, true', '# F9 remplacée par la dictée g
 command = f'/usr/bin/node "{root}/cli.cjs"'
 runtime = root.parent / 'electron--terminal-deck/node_modules/electron/dist/electron'
 block = f'''{start}
-# F9 démarre/termine ; Maj+F9 annule ; F10 relance l'application.
+# F9 démarre/termine ; Maj+F9 annule ; Ctrl+F9 relance l'application.
 bind = , F9, exec, {command} toggle
 bind = SHIFT, F9, exec, {command} cancel
-bind = , F10, exec, {command} restart
+bind = CTRL, F9, exec, {command} restart
 windowrule = match:title ^(Dictee Toubi)$, float on, no_initial_focus on, no_follow_mouse on, pin on, size 168 36, border_size 0, no_shadow on, no_blur on, no_anim on, rounding 0
 exec-once = "{runtime}" "{root}/main.cjs" --ozone-platform=wayland
 {end}
@@ -30,4 +30,4 @@ if result.returncode or result.stdout.strip():
     config.write_text(backup.read_text())
     subprocess.run(['hyprctl', 'reload', 'config-only'], capture_output=True)
     sys.exit('Configuration refusée ; configuration précédente restaurée.')
-print('F9, Maj+F9 et F10 activées. Démarrage automatique configuré. Sauvegarde conservée.')
+print('F9, Maj+F9 et Ctrl+F9 activées. Démarrage automatique configuré. Sauvegarde conservée.')

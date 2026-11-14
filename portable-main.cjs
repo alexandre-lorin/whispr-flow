@@ -31,7 +31,7 @@ function positionCapsule() {
 function stopFollow() { clearInterval(followTimer); followTimer = null; }
 function startFollow() {
   stopFollow();
-  followTimer = setInterval(() => { if (recording || finishing) { cursorPosition = screen.getCursorScreenPoint(); positionCapsule(); } }, 32);
+  followTimer = setInterval(() => { if (recording || finishing) { cursorPosition = screen.getCursorScreenPoint(); positionCapsule(); } }, 8);
 }
 
 function paste() {
