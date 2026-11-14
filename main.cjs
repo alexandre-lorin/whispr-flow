@@ -12,7 +12,7 @@ app.setName('Dictee Toubi');app.setPath('userData',path.join(root,'ui'));
 const primary=app.requestSingleInstanceLock();
 if(!primary){app.quit();}else{
  const engine=createDictation({onProgress:gpuChanged});
- let win,server,job,state='idle',dismiss,levelTimer,busy=false,drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
+ let win,server,job,state='idle',dismiss,levelTimer,busy=false,queuedToggle=false,drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
  const pending=new Map();
  const diagnostics=createDiagnostics();
  function gpuChanged(){if(!job&&pending.size)renderPending();}
@@ -141,15 +141,12 @@ if(!primary){app.quit();}else{
   renderPending();
  }
  async function toggle(anchor){
-  if(busy)return;
+  if(busy){if(job)queuedToggle=true;return;}
   busy=true;
   try{
    if(!job){
-    const [target,cursor]=await Promise.all([active(),anchor||hypr(['-j','cursorpos']).then(JSON.parse)]);if(!target.address)throw Error('Sélectionnez un champ de saisie.');
+    const target=await active();if(!target.address)throw Error('Sélectionnez un champ de saisie.');
     const current={id:Date.now(),token:crypto.randomUUID(),target};job=current;
-  await show(cursor);if(job!==current)return;
-    if(!win.isVisible()){win.showInactive();await new Promise(r=>setTimeout(r,40));}
-    if(!win.isVisible())throw Error('Capsule non visible.');
     update('starting');
     await engine.start(current);if(job!==current)return;update('recording');
     levelTimer=setInterval(()=>{try{const v=engine.level(current);win.webContents.send('level',v);}catch(error){clearInterval(levelTimer);if(job===current){job=null;void engine.cancel(current);showError(error);}}},100);
@@ -157,7 +154,7 @@ if(!primary){app.quit();}else{
     const current=job;job=null;clearInterval(levelTimer);finalize(current);
    }
   }catch(error){if(job){const failed=job;job=null;await engine.cancel(failed);showError(error);}}
-  finally{busy=false;}
+  finally{busy=false;if(queuedToggle&&job){queuedToggle=false;void toggle();}else queuedToggle=false;}
  }
  app.whenReady().then(async()=>{
   win=new BrowserWindow({title:'Dictee Toubi',...SIZE,show:false,frame:false,transparent:true,backgroundColor:'#00000000',focusable:true,skipTaskbar:true,resizable:false,alwaysOnTop:true,hasShadow:false,webPreferences:{preload:path.join(__dirname,'preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false}});

@@ -10,6 +10,7 @@ try { status = JSON.parse(result.stdout || '{}'); } catch { status = { state: 'i
 const gpu = status.gpu?.state || 'cold';
 const pending = status.pending || 0;
 const state = status.recording ? 'recording' : status.active ? (gpu === 'yielded' ? 'waiting' : 'transcribing') : 'idle';
-const labels = { recording: '󰍬 Dictée', transcribing: '󰄀 Transcription', waiting: '󰒲 En attente', idle: '' };
+const pulse = ['·', '••', '•••'][Math.floor(Date.now() / 180) % 3];
+const labels = { recording: `󰍬 ${pulse}`, transcribing: `󰄀 ${pulse}`, waiting: '󰒲 Attente GPU', idle: '' };
 const tooltip = state === 'idle' ? 'Whispr Flow · inactif' : `Whispr Flow · ${state} · GPU ${gpu}${pending ? ` · ${pending} en attente` : ''}`;
 process.stdout.write(JSON.stringify({ text: labels[state], alt: state, class: state, tooltip }));
