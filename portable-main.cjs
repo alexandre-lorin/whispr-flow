@@ -9,7 +9,7 @@ app.setPath('userData', path.join(app.getPath('userData'), 'portable'));
 const primary = app.requestSingleInstanceLock();
 if (!primary) app.quit();
 
-let capsule, recorder, ready = false, recording = false, finishing = false, cursorPosition;
+let capsule, recorder, ready = false, recording = false, finishing = false, cursorPosition, followTimer;
 const engine = createPortableDictation({ onProgress: () => updateCapsule() });
 
 function updateCapsule(phase, detail = '') {
@@ -28,6 +28,11 @@ function positionCapsule() {
   y = Math.max(area.y + 4, Math.min(y, area.y + area.height - SIZE.height - 4));
   capsule.setBounds({ x, y, width: SIZE.width, height: SIZE.height });
 }
+function stopFollow() { clearInterval(followTimer); followTimer = null; }
+function startFollow() {
+  stopFollow();
+  followTimer = setInterval(() => { if (recording || finishing) { cursorPosition = screen.getCursorScreenPoint(); positionCapsule(); } }, 32);
+}
 
 function paste() {
   if (process.platform === 'darwin') {
@@ -42,28 +47,29 @@ async function toggle() {
   if (!recording) {
     cursorPosition = screen.getCursorScreenPoint();
     positionCapsule(); capsule.showInactive();
-    recording = true; updateCapsule('recording');
+    recording = true; updateCapsule('recording'); startFollow();
     try { recorder.webContents.send('record:command', 'start'); await engine.start(); }
-    catch (error) { recording = false; updateCapsule('error', error.message); setTimeout(() => capsule.hide(), 1600); }
+    catch (error) { recording = false; stopFollow(); updateCapsule('error', error.message); setTimeout(() => capsule.hide(), 1600); }
     return;
   }
   recording = false; finishing = true; recorder.webContents.send('record:command', 'stop'); updateCapsule('transcribing');
   try {
     const text = await engine.finish();
     clipboard.writeText(text);
-    capsule.hide();
+    stopFollow(); capsule.hide();
     paste();
   } catch (error) { updateCapsule('error', error.message); setTimeout(() => capsule.hide(), 2200); }
   finally { finishing = false; }
 }
 
 function cancel() {
-  recording = false; finishing = false; recorder?.webContents.send('record:command', 'stop'); engine.cancel(); capsule?.hide();
+  recording = false; finishing = false; stopFollow(); recorder?.webContents.send('record:command', 'stop'); engine.cancel(); capsule?.hide();
 }
 
 app.whenReady().then(async () => {
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => callback(permission === 'media'));
   capsule = new BrowserWindow({ title: 'Whispr Flow', ...SIZE, show: false, frame: false, transparent: true, focusable: true, skipTaskbar: true, resizable: false, alwaysOnTop: true, hasShadow: false, webPreferences: { preload: path.join(__dirname, 'preload.cjs'), sandbox: true, contextIsolation: true, nodeIntegration: false, backgroundThrottling: false } });
+  capsule.setIgnoreMouseEvents(true, { forward: true });
   await capsule.loadFile(path.join(__dirname, 'index.html'));
   recorder = new BrowserWindow({ show: false, width: 1, height: 1, webPreferences: { preload: path.join(__dirname, 'portable-preload.cjs'), sandbox: true, contextIsolation: true, nodeIntegration: false, backgroundThrottling: false } });
   await recorder.loadFile(path.join(__dirname, 'portable-recorder.html'));
@@ -76,5 +82,5 @@ app.whenReady().then(async () => {
   void engine.status;
 });
 
-app.on('will-quit', () => { globalShortcut.unregisterAll(); engine.disposeNow(); recorder?.destroy(); });
+app.on('will-quit', () => { stopFollow(); globalShortcut.unregisterAll(); engine.disposeNow(); recorder?.destroy(); });
 app.on('window-all-closed', () => {});
