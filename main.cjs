@@ -133,7 +133,6 @@ if(!primary){app.quit();}else{
    placement.fallback=true;
    win.showInactive();
   }
-  startFollow();
  }
  async function cancel(){
   if(job){const old=job;old.cancelled=true;job=null;clearInterval(levelTimer);await engine.cancel(old);}
@@ -145,8 +144,11 @@ if(!primary){app.quit();}else{
   busy=true;
   try{
    if(!job){
-    const target=await active();if(!target.address)throw Error('Sélectionnez un champ de saisie.');
+    const [target,cursor]=await Promise.all([active(),anchor||hypr(['-j','cursorpos']).then(JSON.parse)]);if(!target.address)throw Error('Sélectionnez un champ de saisie.');
     const current={id:Date.now(),token:crypto.randomUUID(),target};job=current;
+    await show(cursor);if(job!==current)return;
+    if(!win.isVisible()){win.showInactive();await new Promise(r=>setTimeout(r,40));}
+    if(!win.isVisible())throw Error('Capsule non visible.');
     update('starting');
     await engine.start(current);if(job!==current)return;update('recording');
     levelTimer=setInterval(()=>{try{const v=engine.level(current);win.webContents.send('level',v);}catch(error){clearInterval(levelTimer);if(job===current){job=null;void engine.cancel(current);showError(error);}}},100);
