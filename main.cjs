@@ -150,7 +150,7 @@ if(!primary){app.quit();}else{
     if(!win.isVisible()){win.showInactive();await new Promise(r=>setTimeout(r,40));}
     if(!win.isVisible())throw Error('Capsule non visible.');
     update('starting');
-    await engine.start(current);if(job!==current)return;update('recording');
+    await engine.start(current);if(job!==current)return;clearTimeout(dismiss);win.show();update('recording');
     levelTimer=setInterval(()=>{try{const v=engine.level(current);win.webContents.send('level',v);}catch(error){clearInterval(levelTimer);if(job===current){job=null;void engine.cancel(current);showError(error);}}},100);
    }else{
     const current=job;job=null;clearInterval(levelTimer);finalize(current);
