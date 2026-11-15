@@ -1,4 +1,4 @@
-const SIZE={width:168,height:36};
+const SIZE={width:260,height:64};
 function nearCursor(cursor,monitors,size=SIZE){
  const bounds=monitors.map(m=>{
   const rotated=[1,3,5,7].includes(m.transform);

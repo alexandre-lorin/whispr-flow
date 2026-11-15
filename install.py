@@ -17,7 +17,7 @@ block = f'''{start}
 bind = , F9, exec, {command} toggle
 bind = SHIFT, F9, exec, {command} cancel
 bind = CTRL, F9, exec, {command} restart
-windowrule = match:title ^(Dictee Toubi)$, float on, no_initial_focus on, no_follow_mouse on, pin on, size 168 36, border_size 0, no_shadow on, no_blur on, no_anim on, rounding 0
+windowrule = match:title ^(Dictee Toubi)$, float on, no_initial_focus on, no_follow_mouse on, pin on, size 260 64, border_size 0, no_shadow on, no_blur on, no_anim on, rounding 0
 exec-once = "{runtime}" "{root}/main.cjs" --ozone-platform=wayland
 {end}
 '''
