@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),net=require('node:net'),cr
 const {root,socket}=require('./paths.cjs');
  const {createDictation}=require('./engine.cjs');
 const {hypr,active,deliver}=require('./delivery.cjs');
-const {SIZE,nearCursor}=require('./geometry.cjs');
+const {SIZE,nearCursor,bottomCenter}=require('./geometry.cjs');
 const {createDiagnostics}=require('./diagnostics.cjs');
 if (process.platform !== 'linux') {
  require('./portable-main.cjs');
@@ -95,14 +95,14 @@ if(!primary){app.quit();}else{
   update('error',code==='NO_SPEECH'?'Aucune parole reconnue.':code==='MICROPHONE'?'Micro indisponible.':code==='CLIPBOARD'?'Copie indisponible.':'Transcription indisponible.');
  }
  function hide(immediate=false){clearTimeout(dismiss);stopDrag();if(win&&!win.isDestroyed()){if(immediate)win.hide();win.webContents.send('state',{phase:'hidden'});if(!immediate)setTimeout(()=>{if(!job)win.hide();},120);}}
- async function show(anchor){
+ async function show(anchor,center=false){
   clearTimeout(dismiss);
   placement={matched:false};
   focusBeforeShow=await active();
   const cursor=anchor||JSON.parse(await hypr(['-j','cursorpos']));
   const monitors=JSON.parse(await hypr(['-j','monitors']));
   followMonitors=monitors;
-  const bounds=nearCursor(cursor,monitors),{x,y}=bounds;
+  const bounds=center?bottomCenter(monitors):nearCursor(cursor,monitors),{x,y}=bounds;
   await new Promise((resolve,reject)=>{
    const id=crypto.randomUUID(),timer=setTimeout(()=>{preparation=null;reject(Error('La capsule ne répond pas.'));},2000);
    preparation={id,done(){clearTimeout(timer);preparation=null;resolve();}};
@@ -146,7 +146,7 @@ if(!primary){app.quit();}else{
    if(!job){
     const [target,cursor]=await Promise.all([active(),anchor||hypr(['-j','cursorpos']).then(JSON.parse)]);if(!target.address)throw Error('Sélectionnez un champ de saisie.');
     const current={id:Date.now(),token:crypto.randomUUID(),target};job=current;
-    await show(cursor);if(job!==current)return;
+    await show(undefined,true);if(job!==current)return;
     if(!win.isVisible()){win.showInactive();await new Promise(r=>setTimeout(r,40));}
     if(!win.isVisible())throw Error('Capsule non visible.');
     update('starting');

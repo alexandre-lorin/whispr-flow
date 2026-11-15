@@ -12,4 +12,11 @@ function nearCursor(cursor,monitors,size=SIZE){
  if(y+size.height>m.y+m.height-margin)y=cursor.y-size.height-gap;
  return {x:Math.round(Math.max(m.x+margin,Math.min(x,m.x+m.width-size.width-margin))),y:Math.round(Math.max(m.y+margin,Math.min(y,m.y+m.height-size.height-margin))),...size};
 }
-module.exports={SIZE,nearCursor};
+function bottomCenter(monitors,size=SIZE){
+ const bounds=monitors.map(m=>{const rotated=[1,3,5,7].includes(m.transform);return {x:m.x,y:m.y,width:(rotated?m.height:m.width)/m.scale,height:(rotated?m.width:m.height)/m.scale,focused:m.focused};});
+ const m=bounds.find(m=>m.focused)||bounds[0];
+ if(!m)throw Error('Écran indisponible.');
+ const gap=54;
+ return {x:Math.round(m.x+(m.width-size.width)/2),y:Math.round(m.y+m.height-size.height-gap),...size};
+}
+module.exports={SIZE,nearCursor,bottomCenter};

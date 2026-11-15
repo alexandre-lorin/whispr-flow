@@ -2,7 +2,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {shortcut}=require('./delivery.cjs');
 const {clean,wav,pcmLevel}=require('./engine.cjs');
-const {nearCursor}=require('./geometry.cjs');
+const {nearCursor,bottomCenter}=require('./geometry.cjs');
 const {segmenter}=require('./audio.cjs');
 const {createDictation}=require('./engine.cjs');
 const {createGPU}=require('./gpu.cjs');
@@ -76,6 +76,7 @@ test('placement près du curseur, y compris aux bords et sur écran décalé',()
  const center=nearCursor({x:500,y:500},monitors);assert.equal(center.x,516);assert.equal(center.y,516);
  const edge=nearCursor({x:2559,y:1439},monitors);assert.ok(edge.x+edge.width<2560);assert.ok(edge.y+edge.height<1440);
  const other=nearCursor({x:-1079,y:-399},monitors);assert.ok(other.x>=-1080);assert.ok(other.y>=-400);assert.ok(other.x+other.width<=0);
+ const bottom=bottomCenter([{x:0,y:0,width:2560,height:1440,scale:1,focused:true}]);assert.equal(bottom.x,1150);assert.equal(bottom.y,1322);
 });
 test('collage natif : terminal ou champ standard, sans touche Entrée',()=>{
  for(const name of ['kitty','terminal-deck','local.toubi.terminal-deck','nvterminal','org.wezfurlong.wezterm'])assert.equal(shortcut({class:name}),'CTRL SHIFT, V');
