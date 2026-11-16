@@ -178,7 +178,7 @@ if(!primary){app.quit();}else{
     if(cmd.startsWith('{'))try{const value=JSON.parse(cmd);cmd=value.type;popupVariant=[2,3,5,7,9].includes(value.variant)?value.variant:0;const p=value.cursor;if(p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Math.abs(p.x)<100000&&Math.abs(p.y)<100000)cursor={x:p.x,y:p.y};}catch{s.end(JSON.stringify({error:'Commande invalide'}));return;}
     if(cmd==='toggle')void toggle(cursor);
     else if(cmd==='cancel')void cancel();
-    else if(cmd==='preview'&&!job&&!pending.size){void show(cursor,false,popupVariant).then(()=>update('preview')).catch(()=>{});}
+    else if(cmd==='preview'&&!job&&!pending.size){void show(undefined,true,popupVariant).then(()=>update('preview')).catch(()=>{});}
     else if(cmd==='restart'){s.end(JSON.stringify({state:'restarting'}));setTimeout(()=>{app.relaunch();app.exit(0);},40);return;}
     else if(cmd==='quit'){s.end(JSON.stringify({state:'stopped'}));app.quit();return;}
     else if(cmd!=='status'){s.end(JSON.stringify({error:'Commande invalide'}));return;}
