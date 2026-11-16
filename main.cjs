@@ -12,7 +12,7 @@ app.setName('Dictee Toubi');app.setPath('userData',path.join(root,'ui'));
 const primary=app.requestSingleInstanceLock();
 if(!primary){app.quit();}else{
  const engine=createDictation({onProgress:gpuChanged});
- let win,server,job,state='idle',dismiss,levelTimer,busy=false,queuedToggle=false,drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
+ let win,server,job,state='idle',dismiss,levelTimer,busy=false,queuedToggle=false,popupVariant=0,drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
  const pending=new Map();
  const diagnostics=createDiagnostics();
  function gpuChanged(){if(!job&&pending.size)renderPending();}
@@ -95,7 +95,7 @@ if(!primary){app.quit();}else{
   update('error',code==='NO_SPEECH'?'Aucune parole reconnue.':code==='MICROPHONE'?'Micro indisponible.':code==='CLIPBOARD'?'Copie indisponible.':'Transcription indisponible.');
  }
  function hide(immediate=false){clearTimeout(dismiss);stopDrag();if(win&&!win.isDestroyed()){if(immediate)win.hide();win.webContents.send('state',{phase:'hidden'});if(!immediate)setTimeout(()=>{if(!job)win.hide();},120);}}
- async function show(anchor,center=false){
+ async function show(anchor,center=false,variant=0){
   clearTimeout(dismiss);
   placement={matched:false};
   focusBeforeShow=await active();
@@ -106,7 +106,7 @@ if(!primary){app.quit();}else{
   await new Promise((resolve,reject)=>{
    const id=crypto.randomUUID(),timer=setTimeout(()=>{preparation=null;reject(Error('La capsule ne répond pas.'));},2000);
    preparation={id,done(){clearTimeout(timer);preparation=null;resolve();}};
-   win.webContents.send('state',{phase:'hidden',prepareId:id});
+   win.webContents.send('state',{phase:'hidden',prepareId:id,variant});
   });
   win.setBounds(bounds);win.showInactive();
   // Wayland laisse le placement au compositeur.
@@ -175,10 +175,10 @@ if(!primary){app.quit();}else{
    s.on('error',()=>{});s.on('data',b=>{
     input+=b;if(input.length>256){s.destroy();return;}if(!input.includes('\n'))return;
     let cmd=input.trim(),cursor;input='';
-    if(cmd.startsWith('{'))try{const value=JSON.parse(cmd);cmd=value.type;const p=value.cursor;if(p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Math.abs(p.x)<100000&&Math.abs(p.y)<100000)cursor={x:p.x,y:p.y};}catch{s.end(JSON.stringify({error:'Commande invalide'}));return;}
+    if(cmd.startsWith('{'))try{const value=JSON.parse(cmd);cmd=value.type;popupVariant=[2,3,5,7,9].includes(value.variant)?value.variant:0;const p=value.cursor;if(p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Math.abs(p.x)<100000&&Math.abs(p.y)<100000)cursor={x:p.x,y:p.y};}catch{s.end(JSON.stringify({error:'Commande invalide'}));return;}
     if(cmd==='toggle')void toggle(cursor);
     else if(cmd==='cancel')void cancel();
-    else if(cmd==='preview'&&!job&&!pending.size){void show(cursor).then(()=>update('preview')).catch(()=>{});}
+    else if(cmd==='preview'&&!job&&!pending.size){void show(cursor,false,popupVariant).then(()=>update('preview')).catch(()=>{});}
     else if(cmd==='restart'){s.end(JSON.stringify({state:'restarting'}));setTimeout(()=>{app.relaunch();app.exit(0);},40);return;}
     else if(cmd==='quit'){s.end(JSON.stringify({state:'stopped'}));app.quit();return;}
     else if(cmd!=='status'){s.end(JSON.stringify({error:'Commande invalide'}));return;}
