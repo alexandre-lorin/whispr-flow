@@ -21,7 +21,7 @@ main[data-phase=error] small{display:block}
 
 /* Prototypes 2, 3, 5, 7 et 9 : lancer `node cli.cjs previewN`. */
 main[data-variant="2"]{height:44px;border-radius:999px;padding:0 18px;background:#111017f5;border-color:#8e78d666}
-main[data-variant="2"] .content small{display:none}main[data-variant="2"] #wave{width:28px}
+main[data-variant="2"] .content{border-left:1px solid #b9a5f044;padding-left:10px}main[data-variant="2"] .content small{display:none}main[data-variant="2"] #wave{width:28px}
 main[data-variant="2"] #wave i{height:8px;width:2px;animation:wave 520ms ease-in-out infinite alternate}
 main[data-variant="3"]{height:56px;border-radius:12px;background:#dcd8ee18;border-color:#d5caff55;backdrop-filter:blur(18px)}
 main[data-variant="3"] #wave{order:-1}main[data-variant="3"] #wave i{height:14px;width:2px}

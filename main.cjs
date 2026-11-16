@@ -146,7 +146,7 @@ if(!primary){app.quit();}else{
    if(!job){
     const [target,cursor]=await Promise.all([active(),anchor||hypr(['-j','cursorpos']).then(JSON.parse)]);if(!target.address)throw Error('Sélectionnez un champ de saisie.');
     const current={id:Date.now(),token:crypto.randomUUID(),target};job=current;
-    await show(undefined,true);if(job!==current)return;
+    await show(undefined,true,2);if(job!==current)return;
     if(!win.isVisible()){win.showInactive();await new Promise(r=>setTimeout(r,40));}
     if(!win.isVisible())throw Error('Capsule non visible.');
     update('starting');
