@@ -12,7 +12,7 @@ app.setName('Dictee Toubi');app.setPath('userData',path.join(root,'ui'));
 const primary=app.requestSingleInstanceLock();
 if(!primary){app.quit();}else{
  const engine=createDictation({onProgress:gpuChanged});
- let win,server,job,state='idle',dismiss,levelTimer,busy=false,queuedToggle=false,popupVariant=0,drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
+ let win,server,job,state='idle',dismiss,hideTimer,levelTimer,busy=false,queuedToggle=false,popupVariant=0,drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
  const pending=new Map();
  const diagnostics=createDiagnostics();
  function gpuChanged(){if(!job&&pending.size)renderPending();}
@@ -94,9 +94,9 @@ if(!primary){app.quit();}else{
   if(code.startsWith('UI_')||!placement?.matched||!win?.isVisible()){state='idle';hide(true);return;}
   update('error',code==='NO_SPEECH'?'Aucune parole reconnue.':code==='MICROPHONE'?'Micro indisponible.':code==='CLIPBOARD'?'Copie indisponible.':'Transcription indisponible.');
  }
- function hide(immediate=false){clearTimeout(dismiss);stopDrag();if(win&&!win.isDestroyed()){if(immediate)win.hide();win.webContents.send('state',{phase:'hidden'});if(!immediate)setTimeout(()=>{if(!job)win.hide();},120);}}
+ function hide(immediate=false){clearTimeout(dismiss);clearTimeout(hideTimer);hideTimer=null;stopDrag();if(win&&!win.isDestroyed()){if(immediate)win.hide();win.webContents.send('state',{phase:'hidden'});if(!immediate)hideTimer=setTimeout(()=>{hideTimer=null;if(!job)win.hide();},120);}}
  async function show(anchor,center=false,variant=0){
-  clearTimeout(dismiss);
+  clearTimeout(dismiss);clearTimeout(hideTimer);hideTimer=null;
   placement={matched:false};
   focusBeforeShow=await active();
   const cursor=anchor||JSON.parse(await hypr(['-j','cursorpos']));
