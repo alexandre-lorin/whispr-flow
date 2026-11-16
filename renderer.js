@@ -6,7 +6,7 @@ window.dictation.onState(s=>{
  clearInterval(elapsedTimer);
  capsule.title=s.phase==='error'?s.detail:'';
  if(s.prepareId)capsule.classList.add('preparing');else if(s.phase!=='hidden')capsule.classList.remove('preparing');
- capsule.dataset.phase=s.phase;capsule.dataset.variant=s.variant||'';capsule.classList.toggle('hidden',s.phase==='hidden');label.textContent=labels[s.phase]||'Dictée';detail.textContent=s.detail||(s.phase==='recording'?'Micro actif':s.phase==='transcribing'?'Chargement GPU…':'Whisper local');detail.title=detail.textContent;time.textContent='';bars.forEach(b=>b.style.height='3px');
+ capsule.dataset.phase=s.phase;if(Object.prototype.hasOwnProperty.call(s,'variant'))capsule.dataset.variant=s.variant||'';capsule.classList.toggle('hidden',s.phase==='hidden');label.textContent=labels[s.phase]||'Dictée';detail.textContent=s.detail||(s.phase==='recording'?'Micro actif':s.phase==='transcribing'?'Chargement GPU…':'Whisper local');detail.title=detail.textContent;time.textContent='';bars.forEach(b=>b.style.height='3px');
  if(s.phase==='transcribing'){
   const since=performance.now();
   const tick=()=>{time.textContent=`${Math.floor((performance.now()-since)/1000)} s`;};
