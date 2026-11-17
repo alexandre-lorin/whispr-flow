@@ -1,6 +1,6 @@
 const {app,BrowserWindow,ipcMain} = require('electron');
 const fs=require('node:fs'),path=require('node:path'),net=require('node:net'),crypto=require('node:crypto'),{spawn}=require('node:child_process');
-const {root,socket}=require('./paths.cjs');
+const {root,socket,log:logFile}=require('./paths.cjs');
  const {createDictation}=require('./engine.cjs');
 const {hypr,active,deliver}=require('./delivery.cjs');
 const {SIZE,nearCursor,bottomCenter}=require('./geometry.cjs');
@@ -15,6 +15,7 @@ if(!primary){app.quit();}else{
  let win,server,job,state='idle',dismiss,hideTimer,levelTimer,busy=false,queuedToggle=false,popupVariant=0,languageMode='fr',drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
  const pending=new Map();
  const diagnostics=createDiagnostics();
+ function journal(event,details={}){try{fs.appendFileSync(logFile,`${new Date().toISOString()} ${event} ${JSON.stringify(details)}\n`);}catch{}}
  function gpuChanged(){if(!job&&pending.size)renderPending();}
  function renderPending(){
   if(job)return;
@@ -96,6 +97,7 @@ if(!primary){app.quit();}else{
  }
  function hide(immediate=false){clearTimeout(dismiss);clearTimeout(hideTimer);hideTimer=null;stopDrag();if(win&&!win.isDestroyed()){if(immediate)win.hide();win.webContents.send('state',{phase:'hidden'});if(!immediate)hideTimer=setTimeout(()=>{hideTimer=null;if(!job)win.hide();},120);}}
  async function show(anchor,center=false,variant=0){
+  journal('popup.request',{center,variant});
   clearTimeout(dismiss);clearTimeout(hideTimer);hideTimer=null;
   placement={matched:false};
   focusBeforeShow=await active();
@@ -116,7 +118,7 @@ if(!primary){app.quit();}else{
    if(own)break;
    await new Promise(r=>setTimeout(r,35));
   }
-  if(!own)throw Error('Capsule absente du compositeur.');
+  if(!own){journal('popup.missing');throw Error('Capsule absente du compositeur.');}
   ownAddress=own.address;
   await hypr(['dispatch','resizewindowpixel',`exact ${SIZE.width} ${SIZE.height},address:${own.address}`]);
   await hypr(['dispatch','movewindowpixel',`exact ${x} ${y},address:${own.address}`]);
@@ -127,6 +129,7 @@ if(!primary){app.quit();}else{
    await new Promise(r=>setTimeout(r,20));
   }
   placement={matched:!!positioned&&Math.abs(positioned.at[0]-x)<=1&&Math.abs(positioned.at[1]-y)<=1,fallback:false};
+  journal('popup.mapped',{matched:placement.matched,x,y});
   if(!placement.matched){
    // Un compositeur peut retarder ou arrondir le déplacement Wayland. La
    // capsule reste visible à sa position de secours au lieu de disparaître.
@@ -140,7 +143,8 @@ if(!primary){app.quit();}else{
   renderPending();
  }
  async function toggle(anchor){
-  if(busy){if(job)queuedToggle=true;return;}
+  journal('f9.received',{busy,recording:Boolean(job)});
+  if(busy){if(job)queuedToggle=true;journal('f9.queued');return;}
   busy=true;
   try{
    if(!job){
@@ -150,15 +154,16 @@ if(!primary){app.quit();}else{
     if(!win.isVisible()){win.showInactive();await new Promise(r=>setTimeout(r,40));}
     if(!win.isVisible())throw Error('Capsule non visible.');
     update('starting');
-    await engine.start({...current,language:languageMode});if(job!==current)return;clearTimeout(dismiss);win.showInactive();win.webContents.send('language',languageMode);update('recording');
+    await engine.start({...current,language:languageMode});if(job!==current)return;clearTimeout(dismiss);win.showInactive();win.webContents.send('language',languageMode);journal('micro.started',{language:languageMode});update('recording');
     levelTimer=setInterval(()=>{try{const v=engine.level(current);win.webContents.send('level',v);}catch(error){clearInterval(levelTimer);if(job===current){job=null;void engine.cancel(current);showError(error);}}},100);
    }else{
     const current=job;job=null;clearInterval(levelTimer);finalize(current);
    }
-  }catch(error){if(job){const failed=job;job=null;await engine.cancel(failed);showError(error);}}
+  }catch(error){journal('f9.error',{code:diagnostics.add(error)});if(job){const failed=job;job=null;await engine.cancel(failed);showError(error);}}
   finally{busy=false;if(queuedToggle&&job){queuedToggle=false;void toggle();}else queuedToggle=false;}
  }
  app.whenReady().then(async()=>{
+  journal('app.ready');
   win=new BrowserWindow({title:'Dictee Toubi',...SIZE,show:false,frame:false,transparent:true,backgroundColor:'#00000000',focusable:true,skipTaskbar:true,resizable:false,alwaysOnTop:true,hasShadow:false,webPreferences:{preload:path.join(__dirname,'preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false}});
   win.setIgnoreMouseEvents(false);win.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
   ipcMain.on('prepared',(event,id)=>{if(event.sender===win.webContents&&event.senderFrame===win.webContents.mainFrame&&id===preparation?.id)preparation.done();});

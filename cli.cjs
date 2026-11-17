@@ -1,8 +1,12 @@
 const net = require('node:net');
 const {spawn,execFileSync} = require('node:child_process');
 const path = require('node:path');
-const {socket,electron} = require('./paths.cjs');
+const {socket,log,electron} = require('./paths.cjs');
 const action = process.argv[2] || 'toggle';
+if(action==='journal'){
+ try{process.stdout.write(require('node:fs').readFileSync(log,'utf8').split('\n').slice(-80).join('\n'));}catch{}
+ process.exit(0);
+}
 const previewVariant = /^preview(2|3|5|7|9)$/.exec(action)?.[1] || '';
 if (!['toggle','cancel','status','quit','restart','preview'].includes(action) && !previewVariant) process.exit(1);
 let cursor;

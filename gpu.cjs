@@ -1,5 +1,5 @@
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),net=require('node:net'),http=require('node:http'),crypto=require('node:crypto');
-const {spawn}=require('node:child_process');
+const {spawn,execFileSync}=require('node:child_process');
 const {wav,clean}=require('./audio.cjs');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function request(port,route,{body,headers={},signal,timeout=120000}={}){
@@ -26,6 +26,13 @@ function defaultModel(){
   ? path.join(os.homedir(),'.local/share/falcon/models/ggml-large-v3-turbo.bin')
   : path.join(os.homedir(),'Whispr Flow','models','ggml-large-v3-turbo.bin');
 }
+function cleanupOrphanWhisper(model){
+ if(process.platform==='win32')return;
+ try{
+  const lines=execFileSync('ps',['-eo','pid=,ppid=,args='],{encoding:'utf8',timeout:1000}).split('\n');
+  for(const line of lines){const match=line.trim().match(/^(\d+)\s+(\d+)\s+(.+)$/);if(!match||match[2]!=='1'||!/^whisper-server(?:\s|$)/.test(match[3])||!match[3].includes(model))continue;try{process.kill(Number(match[1]),'SIGTERM');}catch{}}
+ }catch{}
+}
 function createGPU({model=defaultModel(),server=process.env.WHISPR_SERVER||(process.platform==='win32'?'whisper-server.exe':'whisper-server'),onState=()=>{},probeRunner=runnerPresent,probeResident=ollamaResident,monitor=true,launch=spawn,transport=request,reservePort}={}){
  let proc,closed,port,route,warming,generation=0,gpu=false,state='cold',priority=false,disposed=false,pumping=false,queue=[],current,monitorTimer,lastResident=0,resident=false,lastDemand=Date.now(),monitorBusy=false,memory={},recoveries=0;
  function report(value){if(state===value)return;state=value;onState({state,queued:queue.length+(current?1:0)});}
@@ -51,7 +58,7 @@ function createGPU({model=defaultModel(),server=process.env.WHISPR_SERVER||(proc
   if(warming)return warming;
   const epoch=++generation;
   const task=(async()=>{
-   report('loading');port=await (reservePort?reservePort():freePort());route='/dictation-'+crypto.randomBytes(18).toString('hex');
+   report('loading');cleanupOrphanWhisper(model);port=await (reservePort?reservePort():freePort());route='/dictation-'+crypto.randomBytes(18).toString('hex');
    if(epoch!==generation||disposed||priority)throw Error('Chargement suspendu.');
    const p=proc=launch('whisper-server',['-m',model,'--host','127.0.0.1','--port',String(port),'--request-path',route,'-l','fr','-nt','-t','4','-sns','-bs','5','-bo','5'],{stdio:['ignore','ignore','pipe']});
    closed=new Promise(resolve=>{p.once('error',()=>resolve());p.once('close',resolve);});
