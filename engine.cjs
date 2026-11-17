@@ -10,13 +10,13 @@ function createDictation(options={}){
  async function halt(j){
   if(j.proc&&j.proc.exitCode===null){j.stopping=true;j.proc.kill('SIGINT');const timer=setTimeout(()=>{if(j.proc.exitCode===null)j.proc.kill('SIGKILL');},800);await j.closed;clearTimeout(timer);}
  }
- async function start({id,token}){
+ async function start({id,token,language='fr'}){
   if(recording)throw Error('Une capture est déjà ouverte.');
   if(typeof token!=='string'||!/^[a-zA-Z0-9-]{8,80}$/.test(token))throw Error('Dictée invalide.');
-  const j={id,token,controller:new AbortController(),parts:[],level:0,bytes:0,started:Date.now(),phase:'recording'};
+  const j={id,token,language:['fr','en'].includes(language)?language:'fr',controller:new AbortController(),parts:[],level:0,bytes:0,started:Date.now(),phase:'recording'};
   jobs.set(token,j);recording=j;
   j.segmenter=segmenter(pcm=>{
-   const part=gpu.submit(pcm,{signal:j.controller.signal}).then(text=>({text}),error=>({error}));
+   const part=gpu.submit(pcm,{signal:j.controller.signal,language:j.language}).then(text=>({text}),error=>({error}));
    j.parts.push(part);
   });
   try{
@@ -30,6 +30,7 @@ function createDictation(options={}){
   }catch(e){await cancel({id,token});throw e;}
  }
  function level(args){const j=get(args);if(j.error)throw j.error;return {level:j.level,seconds:Math.floor((Date.now()-j.started)/1000),segments:j.parts.length};}
+ function setLanguage(args,language){const j=get(args);if(!['fr','en'].includes(language))throw Error('Langue invalide.');j.language=language;return j.language;}
  async function finish(args){
   const j=get(args);if(j.phase!=='recording')throw Error('Transcription déjà en cours.');
   j.phase='transcribing';if(recording===j)recording=null;clearTimeout(j.timer);
@@ -50,6 +51,6 @@ function createDictation(options={}){
   return selected.length>0;
  }
  function disposeNow(){for(const j of jobs.values()){j.controller.abort();clearTimeout(j.timer);if(j.proc?.exitCode===null)j.proc.kill('SIGKILL');j.segmenter.clear();j.parts=[];}jobs.clear();recording=null;gpu.disposeNow();}
- return {start,level,finish,cancel,dispose:()=>cancel(),disposeNow,warm:()=>gpu.start(),gpuStatus:()=>gpu.status()};
+ return {start,level,setLanguage,finish,cancel,dispose:()=>cancel(),disposeNow,warm:()=>gpu.start(),gpuStatus:()=>gpu.status()};
 }
 module.exports={createDictation,pcmLevel,wav,clean};

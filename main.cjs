@@ -12,7 +12,7 @@ app.setName('Dictee Toubi');app.setPath('userData',path.join(root,'ui'));
 const primary=app.requestSingleInstanceLock();
 if(!primary){app.quit();}else{
  const engine=createDictation({onProgress:gpuChanged});
- let win,server,job,state='idle',dismiss,hideTimer,levelTimer,busy=false,queuedToggle=false,popupVariant=0,drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
+ let win,server,job,state='idle',dismiss,hideTimer,levelTimer,busy=false,queuedToggle=false,popupVariant=0,languageMode='fr',drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
  const pending=new Map();
  const diagnostics=createDiagnostics();
  function gpuChanged(){if(!job&&pending.size)renderPending();}
@@ -150,7 +150,7 @@ if(!primary){app.quit();}else{
     if(!win.isVisible()){win.showInactive();await new Promise(r=>setTimeout(r,40));}
     if(!win.isVisible())throw Error('Capsule non visible.');
     update('starting');
-    await engine.start(current);if(job!==current)return;clearTimeout(dismiss);win.show();update('recording');
+    await engine.start({...current,language:languageMode});if(job!==current)return;clearTimeout(dismiss);win.showInactive();win.webContents.send('language',languageMode);update('recording');
     levelTimer=setInterval(()=>{try{const v=engine.level(current);win.webContents.send('level',v);}catch(error){clearInterval(levelTimer);if(job===current){job=null;void engine.cancel(current);showError(error);}}},100);
    }else{
     const current=job;job=null;clearInterval(levelTimer);finalize(current);
@@ -160,12 +160,19 @@ if(!primary){app.quit();}else{
  }
  app.whenReady().then(async()=>{
   win=new BrowserWindow({title:'Dictee Toubi',...SIZE,show:false,frame:false,transparent:true,backgroundColor:'#00000000',focusable:true,skipTaskbar:true,resizable:false,alwaysOnTop:true,hasShadow:false,webPreferences:{preload:path.join(__dirname,'preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false}});
-  win.setIgnoreMouseEvents(true,{forward:true});win.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
+  win.setIgnoreMouseEvents(false);win.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
   ipcMain.on('prepared',(event,id)=>{if(event.sender===win.webContents&&event.senderFrame===win.webContents.mainFrame&&id===preparation?.id)preparation.done();});
   ipcMain.on('drag', (event,action)=>{
    if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame)return;
    if(action==='start')void beginDrag(++dragSequence).catch(stopDrag);
    else if(action==='stop')stopDrag();
+  });
+  ipcMain.on('language-toggle',event=>{
+   if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame)return;
+   languageMode=languageMode==='fr'?'en':'fr';
+   if(job)try{engine.setLanguage(job,languageMode);}catch{}
+   win.webContents.send('language',languageMode);
+   if(focusBeforeShow?.address)void hypr(['dispatch','focuswindow',`address:${focusBeforeShow.address}`]).catch(()=>{});
   });
   win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());
   await win.loadFile(path.join(__dirname,'index.html'));
