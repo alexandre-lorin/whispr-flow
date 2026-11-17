@@ -113,8 +113,8 @@ if(!primary){app.quit();}else{
   win.setBounds(bounds);win.showInactive();
   // Wayland laisse le placement au compositeur.
   let own;
-  for(let i=0;i<40;i++){
-   const clients=JSON.parse(await hypr(['-j','clients']));own=clients.find(w=>w.pid===process.pid&&w.title==='Dictee Toubi'&&w.mapped!==false);
+  for(let i=0;i<80;i++){
+   const clients=JSON.parse(await hypr(['-j','clients']));own=clients.find(w=>w.title==='Dictee Toubi'&&w.mapped!==false);
    if(own)break;
    await new Promise(r=>setTimeout(r,35));
   }
