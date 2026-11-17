@@ -15,5 +15,5 @@ window.dictation.onState(s=>{
 });
 window.dictation.onLevel(v=>{time.textContent=`${Math.floor(v.seconds/60)}:${String(v.seconds%60).padStart(2,'0')}`;bars.forEach((b,i)=>b.style.height=`${3+Math.min(1,v.level*12)*(15-Math.abs(i-3)*3)}px`);});
 window.dictation.onProgress(v=>{if(v.gpu&&capsule.dataset.phase==='transcribing')detail.textContent='RTX 4060 · En cours';});
-window.dictation.onLanguage(v=>{language.textContent=String(v).toUpperCase();capsule.dataset.language=v;clearTimeout(languageTimer);language.classList.remove('changed');language.classList.add('visible');void language.offsetWidth;language.classList.add('changed');languageTimer=setTimeout(()=>{language.classList.remove('visible','changed');},1500);});
+window.dictation.onLanguage(v=>{language.textContent=v==='fr'?'🇫🇷':'🇬🇧';language.title=v==='fr'?'Français':'English';capsule.dataset.language=v;clearTimeout(languageTimer);language.classList.remove('changed');language.classList.add('visible');void language.offsetWidth;language.classList.add('changed');languageTimer=setTimeout(()=>{language.classList.remove('visible','changed');},1500);});
 document.querySelector('.icon').addEventListener('click',event=>{event.stopPropagation();window.dictation.toggleLanguage();});

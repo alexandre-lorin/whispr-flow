@@ -12,7 +12,7 @@ app.setName('Dictee Toubi');app.setPath('userData',path.join(root,'ui'));
 const primary=app.requestSingleInstanceLock();
 if(!primary){app.quit();}else{
  const engine=createDictation({onProgress:gpuChanged});
- let win,server,job,state='idle',dismiss,hideTimer,levelTimer,busy=false,queuedToggle=false,popupVariant=0,languageMode='fr',drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
+ let win,server,job,state='idle',dismiss,hideTimer,levelTimer,busy=false,queuedToggle=false,lastToggleAt=0,popupVariant=0,languageMode='fr',drag,dragTimer,followTimer,followMonitors,nativeFollow,ownAddress,dragSequence=0,deliveryChain=Promise.resolve(),focusBeforeShow,preparation,placement,lastDelivery;
  const pending=new Map();
  const diagnostics=createDiagnostics();
  function journal(event,details={}){try{fs.appendFileSync(logFile,`${new Date().toISOString()} ${event} ${JSON.stringify(details)}\n`);}catch{}}
@@ -144,6 +144,8 @@ if(!primary){app.quit();}else{
   renderPending();
  }
  async function toggle(anchor){
+  if(Date.now()-lastToggleAt<280)return;
+  lastToggleAt=Date.now();
   journal('f9.received',{busy,recording:Boolean(job)});
   if(busy){if(job)queuedToggle=true;journal('f9.queued');return;}
   busy=true;
