@@ -95,7 +95,7 @@ if(!primary){app.quit();}else{
   if(code.startsWith('UI_')||!placement?.matched||!win?.isVisible()){state='idle';hide(true);return;}
   update('error',code==='NO_SPEECH'?'Aucune parole reconnue.':code==='MICROPHONE'?'Micro indisponible.':code==='CLIPBOARD'?'Copie indisponible.':'Transcription indisponible.');
  }
- function hide(immediate=false){clearTimeout(dismiss);clearTimeout(hideTimer);hideTimer=null;stopDrag();if(win&&!win.isDestroyed()){if(immediate)win.hide();win.webContents.send('state',{phase:'hidden'});if(!immediate)hideTimer=setTimeout(()=>{hideTimer=null;if(!job)win.hide();},120);}}
+ function hide(immediate=false){clearTimeout(dismiss);clearTimeout(hideTimer);hideTimer=null;stopDrag();if(win&&!win.isDestroyed()){if(immediate){win.setOpacity(0);win.setIgnoreMouseEvents(true);}win.webContents.send('state',{phase:'hidden'});if(!immediate)hideTimer=setTimeout(()=>{hideTimer=null;if(!job){win.setOpacity(0);win.setIgnoreMouseEvents(true);}},120);}}
  async function show(anchor,center=false,variant=0){
   journal('popup.request',{center,variant});
   clearTimeout(dismiss);clearTimeout(hideTimer);hideTimer=null;
@@ -110,7 +110,7 @@ if(!primary){app.quit();}else{
    preparation={id,done(){clearTimeout(timer);preparation=null;resolve();}};
    win.webContents.send('state',{phase:'hidden',prepareId:id,variant});
   });
-  win.setBounds(bounds);win.showInactive();
+  win.setBounds(bounds);win.setOpacity(1);win.setIgnoreMouseEvents(false);win.showInactive();
   // Wayland laisse le placement au compositeur.
   let own;
   for(let i=0;i<80;i++){
@@ -166,7 +166,7 @@ if(!primary){app.quit();}else{
  app.whenReady().then(async()=>{
   journal('app.ready');
   win=new BrowserWindow({title:'Dictee Toubi',...SIZE,show:false,frame:false,transparent:true,backgroundColor:'#00000000',focusable:true,skipTaskbar:true,resizable:false,alwaysOnTop:true,hasShadow:false,webPreferences:{preload:path.join(__dirname,'preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false}});
-  win.setIgnoreMouseEvents(false);win.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
+  win.setIgnoreMouseEvents(true);win.setOpacity(0);win.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
   ipcMain.on('prepared',(event,id)=>{if(event.sender===win.webContents&&event.senderFrame===win.webContents.mainFrame&&id===preparation?.id)preparation.done();});
   ipcMain.on('drag', (event,action)=>{
    if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame)return;
