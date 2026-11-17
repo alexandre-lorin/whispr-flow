@@ -8,8 +8,9 @@ main{height:52px;gap:10px;padding:0 14px;border-radius:20px;background:linear-gr
 main.hidden{transform:translateY(8px) scale(.82)}
 .icon{width:22px;height:24px;color:#cbb8ff}.icon svg{width:22px;height:24px}
 strong{font-size:13px;letter-spacing:.01em}#time{font-size:11px;color:#c5bfd2}
-#language{display:inline-block;font-size:9px;letter-spacing:.08em;color:#cbb8ff;border:1px solid #a99bd266;border-radius:4px;padding:1px 4px;transition:color .18s,border-color .18s,transform .18s}
-#language.changed{animation:language-pop 420ms cubic-bezier(.2,.8,.2,1)}
+#language{display:inline-block;min-width:18px;font:600 10px/1 "JetBrains Mono",monospace;letter-spacing:.08em;color:#fff;opacity:0;transform:translateY(2px);transition:opacity .8s ease,transform .8s ease}
+#language.visible{opacity:1;transform:translateY(0)}
+#language.changed{animation:language-pop 320ms cubic-bezier(.2,.8,.2,1)}
 small{display:block;font-size:10px;line-height:1.2;color:#aaa3b5;margin-top:3px}
 #wave{display:flex;gap:3px;height:26px;width:34px;align-items:center}
 #wave i{width:3px;height:5px;background:#cbb8ff;box-shadow:0 0 7px #a994ff80}
