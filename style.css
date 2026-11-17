@@ -8,8 +8,8 @@ main{height:52px;gap:10px;padding:0 14px;border-radius:20px;background:linear-gr
 main.hidden{transform:translateY(8px) scale(.82)}
 .icon{width:22px;height:24px;color:#cbb8ff}.icon svg{width:22px;height:24px}
 strong{font-size:13px;letter-spacing:.01em}#time{font-size:11px;color:#c5bfd2}
-#language{font-size:9px;letter-spacing:.08em;color:#a99bd2;border:1px solid #a99bd244;border-radius:4px;padding:1px 4px}
-#language{display:none}
+#language{display:inline-block;font-size:9px;letter-spacing:.08em;color:#cbb8ff;border:1px solid #a99bd266;border-radius:4px;padding:1px 4px;transition:color .18s,border-color .18s,transform .18s}
+#language.changed{animation:language-pop 420ms cubic-bezier(.2,.8,.2,1)}
 small{display:block;font-size:10px;line-height:1.2;color:#aaa3b5;margin-top:3px}
 #wave{display:flex;gap:3px;height:26px;width:34px;align-items:center}
 #wave i{width:3px;height:5px;background:#cbb8ff;box-shadow:0 0 7px #a994ff80}
@@ -20,6 +20,7 @@ main[data-phase=transcribing] #wave i{height:11px;animation:wave 1s ease-in-out 
 main[data-phase=error]{height:52px;min-height:52px;padding:0 14px;align-items:center}
 main[data-phase=error] small{display:block}
 @keyframes wave{to{height:22px;opacity:.42}}
+@keyframes language-pop{50%{color:#fff;border-color:#fff;transform:scale(1.16)}}
 
 /* Prototypes 2, 3, 5, 7 et 9 : lancer `node cli.cjs previewN`. */
 main[data-variant="2"]{height:44px;border-radius:999px;padding:0 18px;background:#111017f5;border-color:#8e78d666}

@@ -138,6 +138,7 @@ if(!primary){app.quit();}else{
   }
  }
  async function cancel(){
+  languageMode='fr';win?.webContents.send('language','fr');
   if(job){const old=job;old.cancelled=true;job=null;clearInterval(levelTimer);await engine.cancel(old);}
   else{for(const item of pending.values())item.cancelled=true;await engine.cancel();}
   renderPending();
@@ -157,7 +158,7 @@ if(!primary){app.quit();}else{
     await engine.start({...current,language:languageMode});if(job!==current)return;clearTimeout(dismiss);win.showInactive();win.webContents.send('language',languageMode);journal('micro.started',{language:languageMode});update('recording');
     levelTimer=setInterval(()=>{try{const v=engine.level(current);win.webContents.send('level',v);}catch(error){clearInterval(levelTimer);if(job===current){job=null;void engine.cancel(current);showError(error);}}},100);
    }else{
-    const current=job;job=null;clearInterval(levelTimer);finalize(current);
+    const current=job;job=null;clearInterval(levelTimer);languageMode='fr';win.webContents.send('language','fr');finalize(current);
    }
   }catch(error){journal('f9.error',{code:diagnostics.add(error)});if(job){const failed=job;job=null;await engine.cancel(failed);showError(error);}}
   finally{busy=false;if(queuedToggle&&job){queuedToggle=false;void toggle();}else queuedToggle=false;}
